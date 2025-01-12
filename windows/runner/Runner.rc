@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "test1" "\0"
+            VALUE "CompanyName", "com.tigley" "\0"
+            VALUE "FileDescription", "iliganon_go" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "test1" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "test1.exe" "\0"
-            VALUE "ProductName", "test1" "\0"
+            VALUE "InternalName", "iliganon_go" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 com.tigley. All rights reserved." "\0"
+            VALUE "OriginalFilename", "iliganon_go.exe" "\0"
+            VALUE "ProductName", "iliganon_go" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
