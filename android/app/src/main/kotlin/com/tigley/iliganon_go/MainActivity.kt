@@ -1,4 +1,4 @@
-package com.example.test1
+package com.tigley.iliganon_go
 
 import io.flutter.embedding.android.FlutterActivity
 

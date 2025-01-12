@@ -1,6 +1,6 @@
 {
-    "name": "test1",
-    "short_name": "test1",
+    "name": "iliganon_go",
+    "short_name": "iliganon_go",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
