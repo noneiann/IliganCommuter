@@ -18,9 +18,9 @@ class IliganonGo extends StatelessWidget {
       theme: ThemeData(
         primaryColor: const Color(0xFF98D8D8), // Pastel Blue
         scaffoldBackgroundColor: const Color(0xFFF0F8F8),
-        colorScheme: ColorScheme.light(
-          primary: const Color(0xFF98D8D8),
-          secondary: const Color(0xFF98D8AA), // Pastel Green
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF98D8D8),
+          secondary: Color(0xFF98D8AA), // Pastel Green
         ),
       ),
       home: const HomePage(),
