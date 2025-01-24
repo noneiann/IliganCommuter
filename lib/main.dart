@@ -22,6 +22,7 @@ class IliganonGo extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'IliganonGo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: const Color(0xFF98D8D8), // Pastel Blue
         scaffoldBackgroundColor: const Color(0xFFF0F8F8),
@@ -31,6 +32,7 @@ class IliganonGo extends StatelessWidget {
         ),
       ),
       home: const HomePage(),
+
     );
   }
 }

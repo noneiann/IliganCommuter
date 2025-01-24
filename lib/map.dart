@@ -158,9 +158,7 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Search Locations'),
-      ),
+
       body: Column(
         children: [
           Padding(
@@ -193,7 +191,8 @@ class _MapPageState extends State<MapPage> {
               markers: {
                 Marker(
                   markerId: const MarkerId("currentLocation"),
-                  position: LatLng(currentLocation!.latitude!, currentLocation!.longitude!)
+                  position: LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
+
                 )
               }
             ),

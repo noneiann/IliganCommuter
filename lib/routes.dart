@@ -15,7 +15,14 @@ class _RoutesPageState extends State<RoutesPage> {
   double? fare;
 
   @override
+  void initState() {
+    // TODO: implement initState
+    JeepneyAPI.fetchAllRoutes();
+    super.initState();
+  }
+  @override
   Widget build(BuildContext context) {
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -91,7 +98,6 @@ class _RoutesPageState extends State<RoutesPage> {
           ),
           const SizedBox(height: 16),
 
-          // Fare Display
           if (fare != null)
             Card(
               child: Padding(
@@ -110,7 +116,8 @@ class _RoutesPageState extends State<RoutesPage> {
                   ],
                 ),
               ),
-            ),
+            )
+
         ],
       ),
     );

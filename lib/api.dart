@@ -13,7 +13,25 @@ class JeepneyAPI {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   static List<RouteInfo> routes = [];
-
+  static Future<void> fetchAllRoutes() async {
+    try {
+      final snapshot = await _firestore.collection('Routes').get();
+      routes = snapshot.docs.map((doc) {
+        final data = doc.data();
+        final points = (data['points'] as List?)?.map((point) {
+          if (point is GeoPoint) {
+            return LatLng(point.latitude, point.longitude);
+          } else {
+            // Handle unexpected data types (e.g., maps or null)
+            return LatLng(0.0, 0.0); // Default value
+          }
+        }).toList() ?? [];
+        return RouteInfo(data['name'], data['basefare'].toDouble(),points);
+      }).toList();
+    } catch (e) {
+      print('Error fetching routes: $e');
+    }
+  }
   static Future<void> fetchRoutes(String query) async {
     try {
       final snapshot = await _firestore
@@ -53,10 +71,10 @@ class JeepneyAPI {
 
       switch (passengerType) {
         case 'Student':
-          fare *= 0.8; // 20% discount
+          fare -= 2; // 20% discount
           break;
         case 'Senior':
-          fare *= 0.8; // 20% discount
+          fare -= 2; // 20% discount
           break;
         default:
           break;
