@@ -7,21 +7,30 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      children: const [
-        ListTile(
-          leading: Icon(Icons.language),
-          title: Text('Language'),
-          subtitle: Text('English'),
+      padding: const EdgeInsets.all(16),
+      children: [
+        Card(
+          child: ListTile(
+            leading: Icon(Icons.language, color: Theme.of(context).colorScheme.primary),
+            title: Text('Language', style: Theme.of(context).textTheme.bodyLarge),
+            subtitle: Text('English', style: Theme.of(context).textTheme.bodyMedium),
+          ),
         ),
-        ListTile(
-          leading: Icon(Icons.dark_mode),
-          title: Text('Theme'),
-          subtitle: Text('Light'),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: Icon(Icons.dark_mode, color: Theme.of(context).colorScheme.primary),
+            title: Text('Theme', style: Theme.of(context).textTheme.bodyLarge),
+            subtitle: Text('Light', style: Theme.of(context).textTheme.bodyMedium),
+          ),
         ),
-        ListTile(
-          leading: Icon(Icons.info),
-          title: Text('About'),
-          subtitle: Text('Version 1.0.0'),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: Icon(Icons.info, color: Theme.of(context).colorScheme.primary),
+            title: Text('About', style: Theme.of(context).textTheme.bodyLarge),
+            subtitle: Text('Version 1.0.0', style: Theme.of(context).textTheme.bodyMedium),
+          ),
         ),
       ],
     );

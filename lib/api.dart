@@ -11,8 +11,10 @@ class RouteInfo {
 
 class JeepneyAPI {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
   static List<RouteInfo> routes = [];
+  static List<RouteInfo> searchResults = [];
+
+
   static Future<void> fetchAllRoutes() async {
     try {
       final snapshot = await _firestore.collection('Routes').get();
@@ -30,6 +32,36 @@ class JeepneyAPI {
       }).toList();
     } catch (e) {
       print('Error fetching routes: $e');
+    }
+  }
+
+  static Future<List<RouteInfo>> searchRoutes(String query) async {
+    try {
+      print('Search Query: "$query"');
+
+      if (query.isEmpty) {
+        print('Query is empty, fetching all routes');
+        await fetchAllRoutes();
+        print('Total routes: ${routes.length}');
+        return routes;
+      }
+
+      // Fetch all routes first
+      await fetchAllRoutes();
+
+      // Filter routes manually
+      final filteredRoutes = routes.where((route) {
+        final matchesQuery = route.name.toLowerCase().contains(query.toLowerCase());
+        print('Route: ${route.name}, Matches Query: $matchesQuery');
+        return matchesQuery;
+      }).toList();
+
+      print('Filtered Routes Count: ${filteredRoutes.length}');
+
+      return filteredRoutes;
+    } catch (e) {
+      print('Error in searchRoutes: $e');
+      return [];
     }
   }
   static Future<void> fetchRoutes(String query) async {
