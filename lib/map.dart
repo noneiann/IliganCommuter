@@ -4,8 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:http/http.dart' as http;
+import 'package:location/location.dart';
 import 'dart:convert';
 import 'api.dart';
+
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -19,6 +21,29 @@ class _MapPageState extends State<MapPage> {
   GoogleMapController? _mapController;
   Set<Marker> _markers = {};
   Set<Polyline> _polylines = {};
+  LocationData? currentLocation;
+
+  void getCurrentLocation (){
+    Location location = Location();
+
+    location.getLocation().then((location) {
+      currentLocation = location;
+    });
+
+    location.onLocationChanged.listen((newLoc) {
+      currentLocation = newLoc;
+
+      setState(() {
+
+      });
+    });
+  }
+
+@override
+  void initState() {
+    getCurrentLocation();
+    super.initState();
+  }
 
 
   @override
@@ -130,9 +155,6 @@ class _MapPageState extends State<MapPage> {
   }
 
 
-
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -161,13 +183,19 @@ class _MapPageState extends State<MapPage> {
             ),
           ),
           Expanded(
-            child: GoogleMap(
+            child: currentLocation == null ? Center(child: Text("Loading"),) : GoogleMap(
               onMapCreated: _onMapCreated,
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(8.236027784454347, 124.24716842775479), // Default position
+              initialCameraPosition: CameraPosition(
+                target: LatLng(currentLocation!.latitude!, currentLocation!.longitude!), // Default position
                 zoom: 15,
               ),
               polylines: _polylines, // Add polylines to the map
+              markers: {
+                Marker(
+                  markerId: const MarkerId("currentLocation"),
+                  position: LatLng(currentLocation!.latitude!, currentLocation!.longitude!)
+                )
+              }
             ),
 
           ),
