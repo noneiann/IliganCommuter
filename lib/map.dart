@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:http/http.dart' as http;
 import 'package:location/location.dart';
 import 'dart:convert';
 import 'api.dart';
-
+import './search_delegate.dart';
+import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -17,11 +18,32 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  final TextEditingController _searchController = TextEditingController();
+  final FloatingSearchBarController _searchController = FloatingSearchBarController();
   GoogleMapController? _mapController;
   Set<Marker> _markers = {};
   Set<Polyline> _polylines = {};
   LocationData? currentLocation;
+  bool _isLoading = false;
+
+  List<RouteInfo> _searchResults = [];
+
+  void _performSearch(String query) {
+    setState(() {
+      _isLoading = true;
+    });
+
+    JeepneyAPI.searchRoutes(query).then((results) {
+      setState(() {
+        _searchResults = results;
+        _isLoading = false;
+      });
+    }).catchError((error) {
+      setState(() {
+        _searchResults = [];
+        _isLoading = false;
+      });
+    });
+  }
 
   void getCurrentLocation (){
     Location location = Location();
@@ -39,16 +61,36 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
+  void _initializeRoutes() {
+    setState(() {
+      _isLoading = true;
+    });
+
+    JeepneyAPI.fetchAllRoutes().then((_) {
+      setState(() {
+        _searchResults = JeepneyAPI.routes;
+        _isLoading = false;
+      });
+    }).catchError((error) {
+      setState(() {
+        _searchResults = [];
+        _isLoading = false;
+      });
+    });
+  }
+
 @override
   void initState() {
     getCurrentLocation();
+    _initializeRoutes();
+
     super.initState();
+
   }
 
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -56,47 +98,86 @@ class _MapPageState extends State<MapPage> {
     _mapController = controller;
   }
 
-  Future<void> _searchLocations() async {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) return;
+  void _searchRoute() async {
+    final selectedRoute = await showSearch(
+      context: context,
+      delegate: RouteSearchDelegate(),
+    );
 
-    // Fetch routes using JeepneyAPI
-    await JeepneyAPI.fetchRoutes(query);
+    if (selectedRoute != null && selectedRoute is RouteInfo) {
+      // Clear existing polylines
+      setState(() {
+        _polylines.clear();
+      });
 
+      // Draw the route polyline
+      final roadPolyline = await _getRoadPolyline(selectedRoute.points);
+      if (roadPolyline.isNotEmpty) {
+        setState(() {
+          _polylines.add(
+            Polyline(
+              polylineId: PolylineId(selectedRoute.name),
+              points: roadPolyline,
+              color: Colors.blue,
+              width: 5,
+            ),
+          );
+        });
+
+        // Adjust camera to fit the route
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngBounds(
+            _getLatLngBounds(roadPolyline),
+            50.0, // Padding
+          ),
+        );
+      }
+    }
+  }
+
+  void _selectRoute(RouteInfo route) {
+
+    _searchController.close();
+
+
+    // Clear existing polylines
     setState(() {
       _polylines.clear();
     });
 
-    for (var route in JeepneyAPI.routes) {
-      final points = route.points;
+    // Draw route on map
+    _drawRouteOnMap(route);
+  }
 
-      if (points.isNotEmpty) {
-        // Fetch the road-following path using the Directions API
-        final roadPolyline = await _getRoadPolyline(points);
+  Future<void> _drawRouteOnMap(RouteInfo route) async {
+    try {
+      final roadPolyline = await _getRoadPolyline(route.points);
 
-        if (roadPolyline.isNotEmpty) {
-          setState(() {
-            _polylines.add(
-              Polyline(
-                polylineId: PolylineId(route.name),
-                points: roadPolyline,
-                color: Colors.blue,
-                width: 5,
-              ),
-            );
-          });
-
-          // Adjust camera to fit the polyline
-          _mapController?.animateCamera(
-            CameraUpdate.newLatLngBounds(
-              _getLatLngBounds(roadPolyline),
-              50.0, // Padding
+      if (roadPolyline.isNotEmpty) {
+        setState(() {
+          _polylines.add(
+            Polyline(
+              polylineId: PolylineId(route.name),
+              points: roadPolyline,
+              color: Colors.blue,
+              width: 5,
             ),
           );
-        }
+        });
+
+        // Adjust camera to fit the route
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngBounds(
+            _getLatLngBounds(roadPolyline),
+            50.0, // Padding
+          ),
+        );
       }
+    } catch (e) {
+      print('Error drawing route: $e');
     }
   }
+
 // Function to fetch road-following polyline from Directions API
   Future<List<LatLng>> _getRoadPolyline(List<LatLng> waypoints) async {
     if (waypoints.isEmpty) return [];
@@ -158,48 +239,142 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-      body: Column(
+      resizeToAvoidBottomInset: false,
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      hintText: 'Search for a location...',
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: _searchLocations,
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: currentLocation == null ? Center(child: Text("Loading"),) : GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: LatLng(currentLocation!.latitude!, currentLocation!.longitude!), // Default position
-                zoom: 15,
-              ),
-              polylines: _polylines, // Add polylines to the map
-              markers: {
-                Marker(
-                  markerId: const MarkerId("currentLocation"),
-                  position: LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
-
-                )
-              }
-            ),
-
-          ),
+          buildMap(),
+          // Search bar on top of the map
+          buildFloatingSearchBar()
         ],
       ),
     );
   }
-}
+
+
+  Widget buildMap(){
+    return
+      currentLocation == null
+          ? const Center(child: Text("Loading"))
+          : GoogleMap(
+        onMapCreated: _onMapCreated,
+        initialCameraPosition: CameraPosition(
+          target: LatLng(
+            currentLocation!.latitude!,
+            currentLocation!.longitude!,
+          ),
+          zoom: 15,
+        ),
+        polylines: _polylines, // Add polylines to the map
+        markers: {
+          Marker(
+            markerId: const MarkerId("currentLocation"),
+            position: LatLng(
+              currentLocation!.latitude!,
+              currentLocation!.longitude!,
+            ),
+          ),
+        },
+      );
+  }
+
+  Widget buildSearch(){
+    return Positioned(
+      top: 20.0,
+      left: 10.0,
+      right: 10.0,
+      child: GestureDetector(
+        onTap: _searchRoute, // Trigger the search delegate
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 5.0,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.search, color: Colors.grey),
+              const SizedBox(width: 8.0),
+              Text(
+                "Search for a location...",
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  Widget buildFloatingSearchBar() {
+    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    return FloatingSearchBar(
+      controller: _searchController,
+      hint: 'Search Routes...',
+      scrollPadding: const EdgeInsets.only(top: 16, bottom: 56),
+      transitionDuration: const Duration(milliseconds: 800),
+      transitionCurve: Curves.easeInOut,
+      physics: const BouncingScrollPhysics(),
+      axisAlignment: isPortrait ? 0.0 : -1.0,
+      openAxisAlignment: 0.0,
+      width: isPortrait ? 600 : 500,
+      debounceDelay: const Duration(milliseconds: 500),
+      onQueryChanged: (query) {
+        _performSearch(query);
+      },
+      transition: CircularFloatingSearchBarTransition(),
+      actions: [
+        FloatingSearchBarAction.searchToClear(
+          showIfClosed: false,
+        ),
+      ],
+      builder: (context, transition) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Material(
+            color: Colors.white,
+            elevation: 4.0,
+            child: _buildSearchResults(),
+          ),
+        );
+      },
+    );
+  }
+  Widget _buildSearchResults() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_searchResults.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text('No routes found'),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final route = _searchResults[index];
+        return ListTile(
+          title: Text(route.name),
+          subtitle: Text('Base Fare: ₱${route.baseFare.toStringAsFixed(2)}'),
+          onTap: () => _selectRoute(route),
+        );
+      },
+    );
+  }
+
+
+  }
