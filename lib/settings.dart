@@ -1,4 +1,3 @@
-// settings.dart
 import 'package:flutter/material.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -7,30 +6,60 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
       children: [
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.language, color: Theme.of(context).colorScheme.primary),
-            title: Text('Language', style: Theme.of(context).textTheme.bodyLarge),
-            subtitle: Text('English', style: Theme.of(context).textTheme.bodyMedium),
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.directions_bus_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 40,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Iliganon Go!',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Set your preferences here',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 8),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.dark_mode, color: Theme.of(context).colorScheme.primary),
-            title: Text('Theme', style: Theme.of(context).textTheme.bodyLarge),
-            subtitle: Text('Light', style: Theme.of(context).textTheme.bodyMedium),
-          ),
+        const ListTile(
+          leading: Icon(Icons.language),
+          title: Text('Language'),
+          subtitle: Text('English'),
         ),
-        const SizedBox(height: 8),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.info, color: Theme.of(context).colorScheme.primary),
-            title: Text('About', style: Theme.of(context).textTheme.bodyLarge),
-            subtitle: Text('Version 1.0.0', style: Theme.of(context).textTheme.bodyMedium),
-          ),
+        const ListTile(
+          leading: Icon(Icons.dark_mode),
+          title: Text('Theme'),
+          subtitle: Text('Light'),
+        ),
+        const ListTile(
+          leading: Icon(Icons.info),
+          title: Text('About'),
+          subtitle: Text('Version 1.0.0'),
         ),
       ],
     );
