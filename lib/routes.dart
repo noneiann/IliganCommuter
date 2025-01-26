@@ -13,12 +13,21 @@ class _RoutesPageState extends State<RoutesPage> {
   String? selectedRoute;
   String passengerType = 'Regular';
   double? fare;
+  bool isLoading = true;
 
   @override
   void initState() {
-    JeepneyAPI.fetchAllRoutes();
+  initRoutes();
+
     super.initState();
   }
+
+  Future<void> initRoutes() async {
+    await JeepneyAPI.fetchAllRoutes();
+    isLoading = false;
+    setState(() {});
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +77,7 @@ class _RoutesPageState extends State<RoutesPage> {
 
 
         // Rest of the Page
-        Expanded(
+        isLoading ? Center(child: Text("Loading...")) : Expanded(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
