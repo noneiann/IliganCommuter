@@ -312,13 +312,14 @@ class _MapPageState extends State<MapPage> {
       ),
     );
   }
+
   Widget buildFloatingSearchBar() {
     final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
     return FloatingSearchBar(
       controller: _searchController,
       hint: 'Search Routes...',
       scrollPadding: const EdgeInsets.only(top: 16, bottom: 56),
-      transitionDuration: const Duration(milliseconds: 800),
+      transitionDuration: const Duration(milliseconds: 500),
       transitionCurve: Curves.easeInOut,
       physics: const BouncingScrollPhysics(),
       axisAlignment: isPortrait ? 0.0 : -1.0,
@@ -340,7 +341,12 @@ class _MapPageState extends State<MapPage> {
           child: Material(
             color: Colors.white,
             elevation: 4.0,
-            child: _buildSearchResults(),
+            child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.76,
+              ),
+              child: _buildSearchResults(),
+            ),
           ),
         );
       },
@@ -348,9 +354,7 @@ class _MapPageState extends State<MapPage> {
   }
   Widget _buildSearchResults() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_searchResults.isEmpty) {
@@ -363,7 +367,8 @@ class _MapPageState extends State<MapPage> {
     }
 
     return ListView.builder(
-      shrinkWrap: true,
+
+      physics: const ClampingScrollPhysics(),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final route = _searchResults[index];

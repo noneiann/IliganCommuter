@@ -28,6 +28,7 @@ class JeepneyAPI {
             return LatLng(0.0, 0.0); // Default value
           }
         }).toList() ?? [];
+        print(data);
         return RouteInfo(data['name'], data['basefare'].toDouble(),points);
       }).toList();
     } catch (e) {
