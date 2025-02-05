@@ -11,7 +11,8 @@ import './search_delegate.dart';
 import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  final RouteInfo? route;
+  const MapPage({super.key, this.route});
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -24,6 +25,7 @@ class _MapPageState extends State<MapPage> {
   Set<Polyline> _polylines = {};
   LocationData? currentLocation;
   bool _isLoading = false;
+
 
   List<RouteInfo> _searchResults = [];
 
@@ -79,13 +81,20 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-@override
+  @override
   void initState() {
+    super.initState();
     getCurrentLocation();
     _initializeRoutes();
-
-    super.initState();
-
+    if (widget.route != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_mapController != null) {
+          _drawRouteOnMap(widget.route!);
+          // Set initial query text if route is provided
+          _searchController.query = widget.route!.name;
+        }
+      });
+    }
   }
 
 
@@ -96,6 +105,9 @@ class _MapPageState extends State<MapPage> {
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
+    if (widget.route != null) {
+      _drawRouteOnMap(widget.route!);
+    }
   }
 
   void _searchRoute() async {
@@ -138,6 +150,7 @@ class _MapPageState extends State<MapPage> {
   void _selectRoute(RouteInfo route) {
 
     _searchController.close();
+    _searchController.query = route.name;
 
 
     // Clear existing polylines
@@ -315,7 +328,9 @@ class _MapPageState extends State<MapPage> {
 
   Widget buildFloatingSearchBar() {
     final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+
     return FloatingSearchBar(
+      clearQueryOnClose:false,
       controller: _searchController,
       hint: 'Search Routes...',
       scrollPadding: const EdgeInsets.only(top: 16, bottom: 56),
@@ -325,12 +340,37 @@ class _MapPageState extends State<MapPage> {
       axisAlignment: isPortrait ? 0.0 : -1.0,
       openAxisAlignment: 0.0,
       width: isPortrait ? 600 : 500,
-      debounceDelay: const Duration(milliseconds: 500),
-      onQueryChanged: (query) {
-        _performSearch(query);
-      },
+
+      onQueryChanged: _performSearch,
       transition: CircularFloatingSearchBarTransition(),
+      accentColor: Theme.of(context).colorScheme.primary,
+      iconColor: Theme.of(context).colorScheme.onSurface,
+      queryStyle: Theme.of(context).textTheme.bodyMedium,
+      hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+      ),
       actions: [
+        FloatingSearchBarAction(
+          showIfOpened: false,
+          child: CircularButton(
+            icon: Icon(
+              Icons.place,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            onPressed: () {
+              if (currentLocation != null) {
+                _mapController?.animateCamera(
+                  CameraUpdate.newLatLng(
+                    LatLng(
+                      currentLocation!.latitude!,
+                      currentLocation!.longitude!,
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        ),
         FloatingSearchBarAction.searchToClear(
           showIfClosed: false,
         ),
@@ -339,11 +379,11 @@ class _MapPageState extends State<MapPage> {
         return ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Material(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             elevation: 4.0,
             child: Container(
               constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.76,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
               ),
               child: _buildSearchResults(),
             ),
@@ -354,32 +394,40 @@ class _MapPageState extends State<MapPage> {
   }
   Widget _buildSearchResults() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Material(color:Theme.of(context).colorScheme.surface,
+      child: Center(child: CircularProgressIndicator()));
     }
 
     if (_searchResults.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text('No routes found'),
-        ),
+      return Material(color:Theme.of(context).colorScheme.surface,
+          child: Center(child: Padding(padding: EdgeInsets.all(16.0), child: Text('No routes found'),))
       );
     }
 
-    return ListView.builder(
-
-      physics: const ClampingScrollPhysics(),
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        final route = _searchResults[index];
-        return ListTile(
-          title: Text(route.name),
-          subtitle: Text('Base Fare: ₱${route.baseFare.toStringAsFixed(2)}'),
-          onTap: () => _selectRoute(route),
-        );
-      },
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: ListView.builder(
+        itemCount: _searchResults.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            tileColor: Theme.of(context).colorScheme.surface,
+            textColor: Theme.of(context).colorScheme.onSurface,
+            iconColor: Theme.of(context).colorScheme.primary,
+            title: Text(
+              _searchResults[index].name,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            subtitle: Text(
+              'Base Fare: ₱${_searchResults[index].baseFare.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            onTap: () => _selectRoute(_searchResults[index]),
+          );
+        },
+      ),
     );
   }
 
 
-  }
+}
+

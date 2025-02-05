@@ -2,7 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
+  final Function(ThemeMode) changeThemeMode;
+  final ThemeMode currentThemeMode;
+
+  const SettingsPage({
+    super.key,
+    required this.changeThemeMode,
+    required this.currentThemeMode,
+  });
+
   static const geopoints = [
     { 'latitude': 8.319188626178077, 'longitude': 124.24888306219502 },
     { 'latitude': 8.3139554471555, 'longitude': 124.251492309312 },
@@ -94,15 +102,35 @@ class SettingsPage extends StatelessWidget {
             ),
           ),
         ),
-        const ListTile(
-          leading: Icon(Icons.language),
-          title: Text('Language'),
-          subtitle: Text('English'),
+        ListTile(
+          leading: const Icon(Icons.dark_mode),
+          title: const Text('Theme'),
+          subtitle: Text(currentThemeMode == ThemeMode.dark ? 'Dark' : 'Light'),
+          trailing: Switch(
+            value: currentThemeMode == ThemeMode.dark,
+            onChanged: (bool value) {
+              changeThemeMode(value ? ThemeMode.dark : ThemeMode.light);
+            },
+          ),
         ),
-        const ListTile(
-          leading: Icon(Icons.dark_mode),
-          title: Text('Theme'),
-          subtitle: Text('Light'),
+        ListTile(
+          leading: const Icon(Icons.help_outline),
+          title: const Text('Help & Support'),
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Help & Support'),
+                content: const Text('For assistance, please contact us at support@iliganongo.com'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
         const ListTile(
           leading: Icon(Icons.info),

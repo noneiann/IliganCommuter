@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart'; // For LatLng
 
@@ -97,26 +99,70 @@ class JeepneyAPI {
     }
   }
 
+
+
+  static double calculateDistance(LatLng point1, LatLng point2) {
+    const double earthRadius = 6371e3; // meters
+    final lat1 = point1.latitude * (pi / 180);
+    final lon1 = point1.longitude * (pi / 180);
+    final lat2 = point2.latitude * (pi / 180);
+    final lon2 = point2.longitude * (pi / 180);
+
+    final dLat = lat2 - lat1;
+    final dLon = lon2 - lon1;
+
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2);
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+    return earthRadius * c;
+  }
+
+  static List<RouteInfo> findRoutesNearLocation(LatLng target, {double maxDistance = 1000}) {
+    List<RouteInfo> nearbyRoutes = [];
+    for (var route in routes) {
+      bool isNearby = false;
+      for (var point in route.points) {
+        final distance = calculateDistance(target, point);
+        if (distance <= maxDistance) {
+          isNearby = true;
+          break;
+        }
+      }
+      if (isNearby) nearbyRoutes.add(route);
+    }
+    return nearbyRoutes;
+  }
+
+  static double calculateTotalDistance(List<LatLng> points) {
+    double totalDistance = 0.0;
+    for (int i = 0; i < points.length - 1; i++) {
+      totalDistance += calculateDistance(points[i], points[i + 1]);
+    }
+    return totalDistance;
+  }
+
   static double calculateFare(String routeName, String passengerType) {
     try {
       final route = routes.firstWhere((r) => r.name == routeName);
-      double fare = route.baseFare;
+      final double distanceKm = calculateTotalDistance(route.points) / 1000;
 
-      switch (passengerType) {
-        case 'Student':
-          fare -= 2; // 20% discount
-          break;
-        case 'Senior':
-          fare -= 2; // 20% discount
-          break;
-        default:
-          break;
+      // Fare calculation
+      double fare = 13.0;
+      if (distanceKm > 4) {
+        fare += (distanceKm - 4).ceil(); // Round up to nearest whole kilometer
       }
 
-      return fare;
+      // Apply discounts
+      if (passengerType == 'Student' || passengerType == 'Senior') {
+        fare -= 2.0;
+      }
+
+      return fare.clamp(0.0, double.infinity); // Ensure non-negative fare
     } catch (e) {
       print('Error calculating fare: $e');
-      return 0.0; // Default fare if route is not found
+      return 0.0;
     }
   }
+
 }
